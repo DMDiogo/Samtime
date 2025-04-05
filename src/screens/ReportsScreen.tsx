@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
+import { getTheme } from '../theme/theme';
 
 const ReportsScreen = () => {
   const [selectedDate, setSelectedDate] = useState("April 3, 2025");
+  const { theme } = useTheme();
+  const currentTheme = getTheme(theme);
   
   // Dados dos funcionários e registros
   const employeeData = [
@@ -33,37 +37,40 @@ const ReportsScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.colors.background }]}>
       {/* Cabeçalho */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Relatórios</Text>
-        <TouchableOpacity style={styles.exportButton}>
-          <Ionicons name="download-outline" size={20} color="#3EB489" />
-          <Text style={styles.exportButtonText}>Exportar CSV</Text>
+      <View style={[styles.header, { borderBottomColor: currentTheme.colors.divider }]}>
+        <Text style={[styles.headerTitle, { color: currentTheme.colors.primary }]}>Relatórios</Text>
+        <TouchableOpacity style={[styles.exportButton, { borderColor: currentTheme.colors.primary }]}>
+          <Ionicons name="download-outline" size={20} color={currentTheme.colors.primary} />
+          <Text style={[styles.exportButtonText, { color: currentTheme.colors.primary }]}>Exportar CSV</Text>
         </TouchableOpacity>
       </View>
       
       {/* Seletor de Data */}
       <View style={styles.dateSelector}>
         <TouchableOpacity onPress={goToPreviousDay} style={styles.dateNavButton}>
-          <Ionicons name="chevron-back" size={24} color="#888" />
+          <Ionicons name="chevron-back" size={24} color={currentTheme.colors.textSecondary} />
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.dateDisplay}>
-          <Ionicons name="calendar-outline" size={18} color="#333" style={styles.calendarIcon} />
-          <Text style={styles.dateText}>{selectedDate}</Text>
+        <TouchableOpacity style={[styles.dateDisplay, { borderColor: currentTheme.colors.inputBorder }]}>
+          <Ionicons name="calendar-outline" size={18} color={currentTheme.colors.text} style={styles.calendarIcon} />
+          <Text style={[styles.dateText, { color: currentTheme.colors.text }]}>{selectedDate}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity onPress={goToNextDay} style={styles.dateNavButton}>
-          <Ionicons name="chevron-forward" size={24} color="#888" />
+          <Ionicons name="chevron-forward" size={24} color={currentTheme.colors.textSecondary} />
         </TouchableOpacity>
       </View>
       
       {/* Lista de Funcionários e Registros */}
       <ScrollView style={styles.scrollView}>
         {employeeData.map((employee, index) => (
-          <View key={index} style={styles.employeeCard}>
-            <Text style={styles.employeeName}>{employee.name}</Text>
+          <View key={index} style={[styles.employeeCard, { 
+            borderColor: currentTheme.colors.border,
+            backgroundColor: currentTheme.colors.card 
+          }]}>
+            <Text style={[styles.employeeName, { color: currentTheme.colors.primary }]}>{employee.name}</Text>
             
             {employee.records.map((record, recordIndex) => (
               <View key={recordIndex} style={styles.recordItem}>
@@ -72,9 +79,9 @@ const ReportsScreen = () => {
                     styles.statusDot, 
                     record.status === "warning" ? styles.warningDot : styles.errorDot
                   ]} />
-                  <Text style={styles.recordType}>{record.type}</Text>
+                  <Text style={[styles.recordType, { color: currentTheme.colors.text }]}>{record.type}</Text>
                 </View>
-                <Text style={styles.recordTime}>{record.time}</Text>
+                <Text style={[styles.recordTime, { color: currentTheme.colors.textSecondary }]}>{record.time}</Text>
               </View>
             ))}
           </View>
@@ -87,7 +94,6 @@ const ReportsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     paddingTop: 40,
   },
   header: {

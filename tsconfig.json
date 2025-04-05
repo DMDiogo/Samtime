@@ -1,6 +1,19 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
-  }
+    "strict": true,
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "jsx": "react-native",
+    "types": [
+      "@types/react",
+      "@types/react-native",
+      "@react-navigation/native"
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "allowSyntheticDefaultImports": true
+  },
+  "exclude": ["node_modules"]
 }

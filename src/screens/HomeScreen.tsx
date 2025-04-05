@@ -2,8 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FingerprintScanner from '../components/FingerprintScanner';
+import { useTheme } from '../context/ThemeContext';
+import { getTheme } from '../theme/theme';
+import { ThemedView, ThemedText } from '../components/ThemedView';
 
 const HomeScreen = () => {
+  const { theme } = useTheme();
+  const currentTheme = getTheme(theme);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   
@@ -66,78 +71,127 @@ const HomeScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <ThemedView style={styles.container}>
       {/* Título */}
-      <Text style={styles.title}>SamTime</Text>
+      <Text style={[styles.title, { color: currentTheme.colors.primary }]}>SamTime</Text>
       
       {/* Exibição da hora atual */}
-      <Text style={styles.timeText}>{formatTime()}</Text>
-      <Text style={styles.dateText}>{formatDate()}</Text>
+      <Text style={[styles.timeText, { color: currentTheme.colors.primary }]}>{formatTime()}</Text>
+      <ThemedText style={styles.dateText} type="secondary">{formatDate()}</ThemedText>
       
       {/* Botões de ação */}
       <View style={styles.actionButtons}>
         <TouchableOpacity 
-          style={[styles.actionButton, selectedAction === 'Entrada' && styles.selectedButton]}
+          style={[
+            styles.actionButton, 
+            {
+              backgroundColor: theme === 'dark' ? '#333' : '#f0f0f0'
+            },
+            selectedAction === 'Entrada' && styles.selectedButton
+          ]}
           onPress={() => handleAction('Entrada')}
         >
-          <Ionicons name="log-in-outline" size={24} color={selectedAction === 'Entrada' ? '#fff' : '#3EB489'} />
-          <Text style={[styles.actionText, selectedAction === 'Entrada' && styles.selectedText]}>Entrada</Text>
+          <Ionicons 
+            name="log-in-outline" 
+            size={24} 
+            color={selectedAction === 'Entrada' ? '#fff' : currentTheme.colors.primary} 
+          />
+          <Text 
+            style={[
+              styles.actionText, 
+              {color: selectedAction === 'Entrada' ? '#fff' : currentTheme.colors.text},
+            ]}
+          >
+            Entrada
+          </Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.actionButton, styles.middleButton, selectedAction === 'Pausa' && styles.selectedButton]}
+          style={[
+            styles.actionButton, 
+            styles.middleButton, 
+            {
+              backgroundColor: theme === 'dark' ? '#333' : '#fff',
+              borderColor: currentTheme.colors.border
+            },
+            selectedAction === 'Pausa' && styles.selectedButton
+          ]}
           onPress={() => handleAction('Pausa')}
         >
-          <Ionicons name="cafe-outline" size={24} color={selectedAction === 'Pausa' ? '#fff' : '#000'} />
-          <Text style={[styles.actionText, selectedAction === 'Pausa' && styles.selectedText]}>Pausa</Text>
+          <Ionicons 
+            name="cafe-outline" 
+            size={24} 
+            color={selectedAction === 'Pausa' ? '#fff' : currentTheme.colors.text} 
+          />
+          <Text 
+            style={[
+              styles.actionText,
+              {color: selectedAction === 'Pausa' ? '#fff' : currentTheme.colors.text}
+            ]}
+          >
+            Pausa
+          </Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.actionButton, selectedAction === 'Saída' && styles.selectedButton]}
+          style={[
+            styles.actionButton, 
+            {
+              backgroundColor: theme === 'dark' ? '#333' : '#f0f0f0'
+            },
+            selectedAction === 'Saída' && styles.selectedButton
+          ]}
           onPress={() => handleAction('Saída')}
         >
-          <Ionicons name="log-out-outline" size={24} color={selectedAction === 'Saída' ? '#fff' : '#3EB489'} />
-          <Text style={[styles.actionText, selectedAction === 'Saída' && styles.selectedText]}>Saída</Text>
+          <Ionicons 
+            name="log-out-outline" 
+            size={24} 
+            color={selectedAction === 'Saída' ? '#fff' : currentTheme.colors.primary} 
+          />
+          <Text 
+            style={[
+              styles.actionText,
+              {color: selectedAction === 'Saída' ? '#fff' : currentTheme.colors.text}
+            ]}
+          >
+            Saída
+          </Text>
         </TouchableOpacity>
       </View>
       
       {/* Scanner de impressão digital */}
       <View style={styles.fingerprintContainer}>
         <FingerprintScanner onScan={handleFingerprint} />
-        <Text style={styles.fingerprintText}>
+        <ThemedText style={styles.fingerprintText} type="secondary">
           {selectedAction 
             ? `Toque para registrar ${selectedAction}` 
             : 'Selecione uma ação e toque para escanear'}
-        </Text>
+        </ThemedText>
       </View>
-    </View>
+    </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: 20,
     alignItems: 'center',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#3EB489',
     marginTop: 40,
     marginBottom: 20,
   },
   timeText: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#3EB489',
     marginBottom: 30,
     marginTop: 50,
   },
   dateText: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 40,
   },
   actionButtons: {
@@ -151,13 +205,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
     width: '30%',
   },
   middleButton: {
-    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
   },
   selectedButton: {
     backgroundColor: '#3EB489',
@@ -166,18 +217,11 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontSize: 14,
   },
-  middleText: {
-    color: '#000',
-  },
-  selectedText: {
-    color: '#fff',
-  },
   fingerprintContainer: {
     alignItems: 'center',
     marginTop: 30,
   },
   fingerprintText: {
-    color: '#666',
     fontSize: 14,
     marginTop: 10,
   },

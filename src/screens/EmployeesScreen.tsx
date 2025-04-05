@@ -3,6 +3,8 @@ import { View, StyleSheet, FlatList, Text, TouchableOpacity } from 'react-native
 import EmployeeCard from '../components/EmployeeCard';
 import { mockEmployees } from '../utils/mockData';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
+import { getTheme } from '../theme/theme';
 
 // Update the Employee interface to match what EmployeeCard expects
 interface Employee {
@@ -22,13 +24,16 @@ const updatedMockEmployees: Employee[] = mockEmployees.map(employee => ({
 }));
 
 const EmployeesScreen: React.FC = () => {
+  const { theme } = useTheme();
+  const currentTheme = getTheme(theme);
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: currentTheme.colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Funcionários</Text>
-        <TouchableOpacity style={styles.addButton}>
+        <Text style={[styles.title, { color: currentTheme.colors.primary }]}>Funcionários</Text>
+        <TouchableOpacity style={[styles.addButton, { backgroundColor: currentTheme.colors.primary }]}>
           <Ionicons name="add" size={20} color="#fff" />
-          <Text style={styles.addButtonText}>Adicionar Funcionário</Text>
+          <Text style={[styles.addButtonText, { color: currentTheme.colors.buttonText }]}>Adicionar Funcionário</Text>
         </TouchableOpacity>
       </View>
       <FlatList
@@ -44,7 +49,6 @@ const EmployeesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
     padding: 16,
     paddingTop: 40,
   },
@@ -57,11 +61,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#3EB489',
     marginTop:20,
   },
   addButton: {
-    backgroundColor: '#3EB489',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
@@ -70,7 +72,6 @@ const styles = StyleSheet.create({
     marginTop:20,
   },
   addButtonText: {
-    color: 'white',
     marginLeft: 4,
     fontWeight: '500',
   },

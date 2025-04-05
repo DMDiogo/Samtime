@@ -1,65 +1,59 @@
-import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import HomeScreen from './src/screens/HomeScreen';
-import EmployeesScreen from './src/screens/EmployeesScreen';
-import ReportsScreen from './src/screens/ReportsScreen';
-import SettingsScreen from './src/screens/SettingsScreen';
-import { Ionicons } from '@expo/vector-icons';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import LoginScreen from './src/screens/LoginScreen';
+import RegisterScreen from './src/screens/RegisterScreen';
+import MainTabNavigator from './src/navigation/MainTabNavigator';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import ThemeWrapper from './src/theme/ThemeWrapper';
+import { getTheme } from './src/theme/theme';
 
-const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
+
+// Componente interno para acessar o contexto de tema
+const AppContent = () => {
+  const { theme } = useTheme();
+  const currentTheme = getTheme(theme);
+  
+  // Configurar temas de navegação baseados no tema atual
+  const navigationTheme = {
+    ...(theme === 'dark' ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(theme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+      primary: currentTheme.colors.primary,
+      background: currentTheme.colors.background,
+      card: currentTheme.colors.card,
+      text: currentTheme.colors.text,
+      border: currentTheme.colors.border,
+      notification: currentTheme.colors.notification,
+    },
+  };
+  
+  return (
+    <View style={[styles.container, { backgroundColor: currentTheme.colors.background }]}>
+      <NavigationContainer theme={navigationTheme}>
+        <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="Main" component={MainTabNavigator} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </View>
+  );
+};
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <NavigationContainer>
-        <Tab.Navigator
-          screenOptions={({ route }) => ({
-            headerShown: false,
-            tabBarStyle: styles.tabBar,
-            tabBarActiveTintColor: '#3EB489',
-            tabBarInactiveTintColor: '#86939e',
-            tabBarLabelStyle: styles.tabBarLabel,
-            tabBarIcon: ({ color, size }) => {
-              let iconName: string = '';
-
-              if (route.name === 'Início') {
-                iconName = 'home-outline';
-              } else if (route.name === 'Funcionários') {
-                iconName = 'people-outline';
-              } else if (route.name === 'Relatórios') {
-                iconName = 'bar-chart-outline';
-              } else if (route.name === 'Configurações') {
-                iconName = 'settings-outline';
-              }
-
-              return <Ionicons name={iconName as any} size={size} color={color} />;
-            },
-          })}
-        >
-          <Tab.Screen name="Início" component={HomeScreen} />
-          <Tab.Screen name="Funcionários" component={EmployeesScreen} />
-          <Tab.Screen name="Relatórios" component={ReportsScreen} />
-          <Tab.Screen name="Configurações" component={SettingsScreen} />
-        </Tab.Navigator>
-      </NavigationContainer>
-      <StatusBar style="auto" />
-    </View>
+    <ThemeProvider>
+      <ThemeWrapper>
+        <AppContent />
+      </ThemeWrapper>
+    </ThemeProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  tabBar: {
-    height: 60,
-    paddingBottom: 5,
-    paddingTop: 5,
-  },
-  tabBarLabel: {
-    fontSize: 12,
   },
 });

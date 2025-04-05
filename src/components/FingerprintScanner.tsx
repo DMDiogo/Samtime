@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FingerprintScanner from 'react-native-fingerprint-scanner';
+import { useTheme } from '../context/ThemeContext';
+import { getTheme } from '../theme/theme';
 
 interface FingerprintProps {
   onScan: () => void;
@@ -22,6 +24,8 @@ interface IOSAuthConfig {
 }
 
 const FingerprintScannerComponent: React.FC<FingerprintProps> = ({ onScan }) => {
+  const { theme } = useTheme();
+  const currentTheme = getTheme(theme);
   const [biometricType, setBiometricType] = useState<string | null>(null);
   const [isSensorAvailable, setSensorAvailable] = useState<boolean>(false);
 
@@ -130,11 +134,17 @@ const FingerprintScannerComponent: React.FC<FingerprintProps> = ({ onScan }) => 
       onPress={handleFingerPrintAuth}
       activeOpacity={0.7}
     >
-      <View style={styles.iconContainer}>
+      <View style={[
+        styles.iconContainer,
+        { 
+          backgroundColor: theme === 'dark' ? '#333' : '#f0f0f0',
+          shadowColor: currentTheme.colors.shadow
+        }
+      ]}>
         <Ionicons 
           name="finger-print-outline" 
           size={64} 
-          color="#3EB489" 
+          color={currentTheme.colors.primary} 
         />
       </View>
     </TouchableOpacity>
@@ -150,11 +160,9 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#f0f0f0',
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 3,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,

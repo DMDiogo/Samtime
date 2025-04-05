@@ -18,17 +18,43 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSExceptionDomains": {
+            "localhost": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            },
+            "192.168.1.57": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
+      },
+      "bundleIdentifier": "com.suacompania.pontoeletronico"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#3EB489"
-      }
+      },
+      "package": "com.suacompania.pontoeletronico",
+      "permissions": [],
+      "usesCleartextTraffic": true,
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "primaryColor": "#3EB489"
+    "primaryColor": "#3EB489",
+    "extra": {
+      "apiUrl": "http://192.168.1.57/api.php"
+    },
+    "plugins": [
+      "expo-localization"
+    ]
   }
 }

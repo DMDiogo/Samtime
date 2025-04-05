@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, Keyboard } from 'react-native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import FingerprintScannerComponent from '../components/FingerprintScanner';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../context/ThemeContext';
+import { getTheme } from '../theme/theme';
+import { ThemedView, ThemedText } from '../components/ThemedView';
 
-// Define your navigation types
 type RootStackParamList = {
   Login: undefined;
   Register: undefined;
-  // Add other screens here as needed
+  Main: undefined;
 };
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
@@ -22,95 +26,148 @@ const LoginSchema = Yup.object().shape({
 
 const LoginScreen = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
+  const { theme } = useTheme();
+  const currentTheme = getTheme(theme);
   const [useBiometric, setUseBiometric] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (values: { email: string; password: string }) => {
-    console.log('Login com:', values);
-    // Here you would call your authentication API
+  const handleLogin = async (values: { email: string; password: string }) => {
+    Keyboard.dismiss(); // Fecha o teclado antes da navegação
+    setLoading(true);
+    try {
+      const response = await axios.post('http://192.168.1.57/app_empresas_api/api.php', {
+        action: 'login',
+        email: values.email,
+        password: values.password
+      });
+  
+      if (response.data.status === 'success') {
+        await AsyncStorage.setItem('userToken', JSON.stringify(response.data.empresa));
+        navigation.navigate('Main');
+      } else {
+        alert(response.data.message);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao conectar ao servidor');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBiometricSuccess = () => {
     console.log('Autenticação biométrica bem-sucedida');
-    // Here you could automatically login or navigate to the main screen
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <View style={styles.innerContainer}>
-        <Image 
-          source={require('../assets/logo.png')} 
-          style={styles.logo} 
-          resizeMode="contain"
-        />
-        
-        <Text style={styles.title}>Bem-vindo de volta</Text>
-        
-        <Formik
-          initialValues={{ email: '', password: '' }}
-          validationSchema={LoginSchema}
-          onSubmit={handleLogin}
-        >
-          {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
-            <View style={styles.formContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Email"
-                onChangeText={handleChange('email')}
-                onBlur={handleBlur('email')}
-                value={values.email}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              {touched.email && errors.email && (
-                <Text style={styles.errorText}>{errors.email}</Text>
-              )}
+    <ThemedView style={styles.container}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+        scrollEnabled={false}
+      >
+        <View style={styles.innerContainer}>
+          <Image 
+            source={require('../../assets/logo.png')} 
+            style={styles.logo} 
+            resizeMode="contain"
+          />
+          
+          <ThemedText style={styles.title} type="title">Bem-vindo de volta</ThemedText>
+          
+          <Formik
+            initialValues={{ email: '', password: '' }}
+            validationSchema={LoginSchema}
+            onSubmit={handleLogin}
+          >
+            {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+              <View style={styles.formContainer}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: currentTheme.colors.inputBackground,
+                      borderColor: currentTheme.colors.inputBorder,
+                      color: currentTheme.colors.text
+                    }
+                  ]}
+                  placeholder="Email"
+                  placeholderTextColor={currentTheme.colors.textSecondary}
+                  onChangeText={handleChange('email')}
+                  onBlur={handleBlur('email')}
+                  value={values.email}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  onSubmitEditing={() => Keyboard.dismiss()}
+                />
+                {touched.email && errors.email && (
+                  <Text style={styles.errorText}>{errors.email}</Text>
+                )}
 
-              <TextInput
-                style={styles.input}
-                placeholder="Senha"
-                onChangeText={handleChange('password')}
-                onBlur={handleBlur('password')}
-                value={values.password}
-                secureTextEntry
-              />
-              {touched.password && errors.password && (
-                <Text style={styles.errorText}>{errors.password}</Text>
-              )}
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: currentTheme.colors.inputBackground,
+                      borderColor: currentTheme.colors.inputBorder,
+                      color: currentTheme.colors.text
+                    }
+                  ]}
+                  placeholder="Senha"
+                  placeholderTextColor={currentTheme.colors.textSecondary}
+                  onChangeText={handleChange('password')}
+                  onBlur={handleBlur('password')}
+                  value={values.password}
+                  secureTextEntry
+                  onSubmitEditing={() => Keyboard.dismiss()}
+                />
+                {touched.password && errors.password && (
+                  <Text style={styles.errorText}>{errors.password}</Text>
+                )}
 
-              <TouchableOpacity 
-                style={styles.loginButton} 
-                onPress={() => handleSubmit()}
-              >
-                <Text style={styles.buttonText}>Entrar</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </Formik>
+                <TouchableOpacity 
+                  style={[styles.loginButton, loading && styles.disabledButton]} 
+                  onPress={() => handleSubmit()}
+                  disabled={loading}
+                >
+                  <Text style={styles.buttonText}>
+                    {loading ? 'Carregando...' : 'Entrar'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </Formik>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.linkText}>Não tem uma conta? Registre-se</Text>
-        </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('Register')}
+            disabled={loading}
+          >
+            <Text style={[styles.linkText, { color: currentTheme.colors.primary }]}>
+              Não tem uma conta? Registre-se
+            </Text>
+          </TouchableOpacity>
 
-        <Text style={styles.orText}>OU</Text>
+          <ThemedText style={styles.orText} type="secondary">OU</ThemedText>
 
-        <FingerprintScannerComponent onScan={handleBiometricSuccess} />
-      </View>
-    </KeyboardAvoidingView>
+          <FingerprintScannerComponent onScan={handleBiometricSuccess} />
+        </View>
+      </ScrollView>
+    </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+  },
+  scrollContainer: {
+    flexGrow: 1,
   },
   innerContainer: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 30,
+    paddingBottom: 40, // Adiciona espaço na parte inferior
   },
   logo: {
     width: 150,
@@ -123,14 +180,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 30,
     textAlign: 'center',
-    color: '#333',
   },
   formContainer: {
     marginBottom: 20,
   },
   input: {
     height: 50,
-    borderColor: '#ddd',
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 15,
@@ -149,20 +204,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
+  disabledButton: {
+    backgroundColor: '#cccccc',
+  },
   buttonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
   },
   linkText: {
-    color: '#3EB489',
     textAlign: 'center',
     marginTop: 20,
   },
   orText: {
     textAlign: 'center',
     marginVertical: 20,
-    color: '#888',
   },
 });
 
