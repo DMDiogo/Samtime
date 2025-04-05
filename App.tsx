@@ -19,9 +19,9 @@ export default function App() {
             headerShown: false,
             tabBarStyle: styles.tabBar,
             tabBarActiveTintColor: '#3EB489',
-            tabBarInactiveTintColor: '#999',
+            tabBarInactiveTintColor: '#86939e',
             tabBarLabelStyle: styles.tabBarLabel,
-            tabBarIcon: ({ color, size, focused }) => {
+            tabBarIcon: ({ color, size }) => {
               let iconName: string = '';
 
               if (route.name === 'Início') {
@@ -29,7 +29,7 @@ export default function App() {
               } else if (route.name === 'Funcionários') {
                 iconName = 'people-outline';
               } else if (route.name === 'Relatórios') {
-                iconName = 'stats-chart';
+                iconName = 'bar-chart-outline';
               } else if (route.name === 'Configurações') {
                 iconName = 'settings-outline';
               }
@@ -58,12 +58,8 @@ const styles = StyleSheet.create({
     height: 60,
     paddingBottom: 5,
     paddingTop: 5,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    backgroundColor: '#fff',
   },
   tabBarLabel: {
     fontSize: 12,
-    marginTop: 3,
   },
 });
