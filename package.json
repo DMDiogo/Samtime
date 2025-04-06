@@ -17,6 +17,8 @@
     "axios": "^1.8.4",
     "expo": "~52.0.42",
     "expo-haptics": "^14.0.1",
+    "expo-linear-gradient": "^14.0.2",
+    "expo-local-authentication": "^15.0.2",
     "expo-localization": "~16.0.1",
     "expo-status-bar": "~2.0.1",
     "formik": "^2.4.6",

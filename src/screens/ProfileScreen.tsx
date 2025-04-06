@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -7,11 +7,14 @@ import { useTheme } from '../context/ThemeContext';
 import { getTheme } from '../theme/theme';
 import { ThemedView, ThemedText, ThemedCard } from '../components/ThemedView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CommonActions } from '@react-navigation/native';
 
 // Definição dos tipos para as rotas
 type RootStackParamList = {
   Settings: undefined;
   Profile: undefined;
+  Login: undefined;
+  Main: undefined;
 };
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Profile'>;
@@ -26,18 +29,57 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { theme } = useTheme();
   const currentTheme = getTheme(theme);
   
-  // Dados do perfil (normalmente viriam de uma API ou contexto)
+  // Dados do perfil que serão carregados do AsyncStorage
   const [profileData, setProfileData] = useState({
-    adminName: 'João Silva',
-    companyEmail: 'contato@minhaempresa.com.br',
-    creationDate: '15/03/2023',
+    adminName: '',
+    companyEmail: '',
+    creationDate: '',
   });
-
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [tempName, setTempName] = useState(profileData.adminName);
-  const [tempEmail, setTempEmail] = useState(profileData.companyEmail);
+  const [tempName, setTempName] = useState('');
+  const [tempEmail, setTempEmail] = useState('');
 
-  const handleSave = () => {
+  // Carregar os dados do usuário ao montar o componente
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  // Função para carregar os dados do usuário do AsyncStorage
+  const loadUserData = async () => {
+    try {
+      setLoading(true);
+      const userDataString = await AsyncStorage.getItem('userToken');
+      
+      if (userDataString) {
+        const userData = JSON.parse(userDataString);
+        
+        setProfileData({
+          adminName: userData.nome || '',
+          companyEmail: userData.email || '',
+          // Usando o campo data_cadastro do banco de dados
+          creationDate: userData.data_cadastro || formatDate(new Date()),
+        });
+        
+        setTempName(userData.nome || '');
+        setTempEmail(userData.email || '');
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados do usuário:', error);
+      Alert.alert('Erro', 'Não foi possível carregar seus dados. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Formatar data para o padrão brasileiro
+  const formatDate = (date: Date): string => {
+    return `${date.getDate().toString().padStart(2, '0')}/${
+      (date.getMonth() + 1).toString().padStart(2, '0')
+    }/${date.getFullYear()}`;
+  };
+
+  const handleSave = async () => {
     // Validação simples de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(tempEmail)) {
@@ -45,15 +87,37 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       return;
     }
 
-    // Aqui você implementaria a chamada para atualizar os dados no backend
-    setProfileData({
-      ...profileData,
-      adminName: tempName,
-      companyEmail: tempEmail,
-    });
-    
-    setIsEditing(false);
-    Alert.alert('Sucesso', 'Dados do perfil atualizados com sucesso!');
+    try {
+      // Obter os dados atuais
+      const userDataString = await AsyncStorage.getItem('userToken');
+      
+      if (userDataString) {
+        const userData = JSON.parse(userDataString);
+        
+        // Atualizar os dados
+        const updatedUserData = {
+          ...userData,
+          nome: tempName,
+          email: tempEmail
+        };
+        
+        // Salvar de volta no AsyncStorage
+        await AsyncStorage.setItem('userToken', JSON.stringify(updatedUserData));
+        
+        // Atualizar o estado
+        setProfileData({
+          ...profileData,
+          adminName: tempName,
+          companyEmail: tempEmail,
+        });
+        
+        setIsEditing(false);
+        Alert.alert('Sucesso', 'Dados do perfil atualizados com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao salvar dados do usuário:', error);
+      Alert.alert('Erro', 'Não foi possível salvar seus dados. Por favor, tente novamente.');
+    }
   };
 
   const handleCancel = () => {
@@ -66,9 +130,16 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     try {
       // Remover o token de autenticação
       await AsyncStorage.removeItem('userToken');
-      // Navegar para a tela de login, isso será implementado em outro momento
       
-      // Mostrar mensagem de sucesso
+      // Redefinir a navegação para a tela de login, removendo todas as telas da pilha
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        })
+      );
+      
+      // Mostra mensagem de sucesso (opcional, já que estamos redirecionando)
       Alert.alert('Sucesso', 'Você saiu da sua conta com sucesso!');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
@@ -95,82 +166,91 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       </View>
 
       <ScrollView style={styles.content}>
-        <View style={styles.profileImageContainer}>
-          <View style={styles.profileImage}>
-            <Text style={styles.profileInitials}>
-              {profileData.adminName.split(' ').map(name => name[0]).join('').toUpperCase()}
-            </Text>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={currentTheme.colors.primary} />
+            <ThemedText style={styles.loadingText}>Carregando dados do perfil...</ThemedText>
           </View>
-        </View>
+        ) : (
+          <>
+            <View style={styles.profileImageContainer}>
+              <View style={styles.profileImage}>
+                <Text style={styles.profileInitials}>
+                  {profileData.adminName ? profileData.adminName.split(' ').map(name => name[0]).join('').toUpperCase() : ''}
+                </Text>
+              </View>
+            </View>
 
-        <View style={[styles.infoSection, { 
-          backgroundColor: currentTheme.colors.surface,
-          borderColor: currentTheme.colors.border,
-         }]}>
-          <ThemedText style={styles.sectionTitle} type="subtitle">Informações da Conta</ThemedText>
-          
-          <View style={styles.infoRow}>
-            <ThemedText style={styles.infoLabel} type="secondary">Nome do Administrador</ThemedText>
-            {isEditing ? (
-              <TextInput
-                style={[styles.input, { 
-                  backgroundColor: currentTheme.colors.inputBackground,
-                  borderColor: currentTheme.colors.inputBorder,
-                  color: currentTheme.colors.text
-                }]}
-                value={tempName}
-                onChangeText={setTempName}
-                placeholder="Nome do Administrador"
-                placeholderTextColor={currentTheme.colors.textSecondary}
-              />
-            ) : (
-              <ThemedText style={styles.infoValue}>{profileData.adminName}</ThemedText>
-            )}
-          </View>
-          
-          <View style={styles.infoRow}>
-            <ThemedText style={styles.infoLabel} type="secondary">E-mail da Empresa</ThemedText>
-            {isEditing ? (
-              <TextInput
-                style={[styles.input, { 
-                  backgroundColor: currentTheme.colors.inputBackground,
-                  borderColor: currentTheme.colors.inputBorder,
-                  color: currentTheme.colors.text
-                }]}
-                value={tempEmail}
-                onChangeText={setTempEmail}
-                placeholder="E-mail da Empresa"
-                keyboardType="email-address"
-                placeholderTextColor={currentTheme.colors.textSecondary}
-              />
-            ) : (
-              <ThemedText style={styles.infoValue}>{profileData.companyEmail}</ThemedText>
-            )}
-          </View>
-          
-          <View style={styles.infoRow}>
-            <ThemedText style={styles.infoLabel} type="secondary">Data de Criação</ThemedText>
-            <ThemedText style={styles.infoValue}>{profileData.creationDate}</ThemedText>
-          </View>
-        </View>
+            <View style={[styles.infoSection, { 
+              backgroundColor: currentTheme.colors.surface,
+              borderColor: currentTheme.colors.border,
+             }]}>
+              <ThemedText style={styles.sectionTitle} type="subtitle">Informações da Conta</ThemedText>
+              
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.infoLabel} type="secondary">Nome do Administrador</ThemedText>
+                {isEditing ? (
+                  <TextInput
+                    style={[styles.input, { 
+                      backgroundColor: currentTheme.colors.inputBackground,
+                      borderColor: currentTheme.colors.inputBorder,
+                      color: currentTheme.colors.text
+                    }]}
+                    value={tempName}
+                    onChangeText={setTempName}
+                    placeholder="Nome do Administrador"
+                    placeholderTextColor={currentTheme.colors.textSecondary}
+                  />
+                ) : (
+                  <ThemedText style={styles.infoValue}>{profileData.adminName}</ThemedText>
+                )}
+              </View>
+              
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.infoLabel} type="secondary">E-mail da Empresa</ThemedText>
+                {isEditing ? (
+                  <TextInput
+                    style={[styles.input, { 
+                      backgroundColor: currentTheme.colors.inputBackground,
+                      borderColor: currentTheme.colors.inputBorder,
+                      color: currentTheme.colors.text
+                    }]}
+                    value={tempEmail}
+                    onChangeText={setTempEmail}
+                    placeholder="E-mail da Empresa"
+                    keyboardType="email-address"
+                    placeholderTextColor={currentTheme.colors.textSecondary}
+                  />
+                ) : (
+                  <ThemedText style={styles.infoValue}>{profileData.companyEmail}</ThemedText>
+                )}
+              </View>
+              
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.infoLabel} type="secondary">Data de Criação</ThemedText>
+                <ThemedText style={styles.infoValue}>{profileData.creationDate}</ThemedText>
+              </View>
+            </View>
 
-        {isEditing && (
-          <TouchableOpacity 
-            style={[styles.cancelButton, { 
-              backgroundColor: theme === 'dark' ? '#333' : '#f8f8f8',
-            }]} 
-            onPress={handleCancel}>
-            <ThemedText style={styles.cancelButtonText} type="secondary">Cancelar</ThemedText>
-          </TouchableOpacity>
+            {isEditing && (
+              <TouchableOpacity 
+                style={[styles.cancelButton, { 
+                  backgroundColor: theme === 'dark' ? '#333' : '#f8f8f8',
+                }]} 
+                onPress={handleCancel}>
+                <ThemedText style={styles.cancelButtonText} type="secondary">Cancelar</ThemedText>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity 
+              style={styles.dangerButton}
+              onPress={handleLogout}
+            >
+              <Ionicons name="log-out-outline" size={20} color="#fff" />
+              <Text style={styles.dangerButtonText}>Sair da Conta</Text>
+            </TouchableOpacity>
+          </>
         )}
-
-        <TouchableOpacity 
-          style={styles.dangerButton}
-          onPress={handleLogout}
-        >
-          <Ionicons name="log-out-outline" size={20} color="#fff" />
-          <Text style={styles.dangerButtonText}>Sair da Conta</Text>
-        </TouchableOpacity>
       </ScrollView>
     </ThemedView>
   );
@@ -185,7 +265,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 20,
     paddingBottom: 20,
     borderBottomWidth: 1,
   },
@@ -273,6 +353,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     marginLeft: 10,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
   },
 });
 

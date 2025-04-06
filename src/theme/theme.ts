@@ -26,7 +26,8 @@ export const lightTheme = {
     overlay: 'rgba(0, 0, 0, 0.5)',
     tabBar: '#FFFFFF',
     tabBarInactive: '#86939E',
-    statusBar: 'dark-content'
+    statusBar: 'dark-content',
+    
   },
   spacing: {
     xs: 4,

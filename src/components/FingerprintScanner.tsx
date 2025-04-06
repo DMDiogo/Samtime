@@ -35,24 +35,46 @@ const FingerprintScannerComponent: React.FC<FingerprintProps> = ({ onScan }) => 
 
     // Limpar os recursos quando o componente for desmontado
     return () => {
-      FingerprintScanner.release();
+      safeRelease();
     };
   }, []);
 
+  // Função segura para liberar recursos
+  const safeRelease = () => {
+    try {
+      if (FingerprintScanner) {
+        FingerprintScanner.release();
+      }
+    } catch (error) {
+      console.log('Erro ao liberar scanner:', error);
+    }
+  };
+
   const checkBiometricSupport = () => {
-    FingerprintScanner.isSensorAvailable()
-      .then(biometryType => {
-        setBiometricType(biometryType);
-        setSensorAvailable(true);
-      })
-      .catch(error => {
-        console.log('Sensor biométrico não disponível', error);
+    try {
+      if (!FingerprintScanner) {
+        console.log('FingerprintScanner não está disponível');
         setSensorAvailable(false);
-      });
+        return;
+      }
+
+      FingerprintScanner.isSensorAvailable()
+        .then(biometryType => {
+          setBiometricType(biometryType);
+          setSensorAvailable(true);
+        })
+        .catch(error => {
+          console.log('Sensor biométrico não disponível', error);
+          setSensorAvailable(false);
+        });
+    } catch (error) {
+      console.log('Erro ao verificar disponibilidade do sensor:', error);
+      setSensorAvailable(false);
+    }
   };
 
   const handleFingerPrintAuth = () => {
-    if (!isSensorAvailable) {
+    if (!isSensorAvailable || !FingerprintScanner) {
       Alert.alert(
         'Erro',
         'Autenticação biométrica não disponível neste dispositivo',
@@ -71,13 +93,18 @@ const FingerprintScannerComponent: React.FC<FingerprintProps> = ({ onScan }) => 
         cancelButton: 'Cancelar',
       };
       
-      // Inicia a autenticação para Android
-      FingerprintScanner.authenticate(androidConfig)
-        .then(() => {
-          FingerprintScanner.release();
-          onScan(); // Execute a callback após sucesso
-        })
-        .catch(handleAuthError);
+      try {
+        // Inicia a autenticação para Android
+        FingerprintScanner.authenticate(androidConfig)
+          .then(() => {
+            safeRelease();
+            onScan(); // Execute a callback após sucesso
+          })
+          .catch(handleAuthError);
+      } catch (error) {
+        console.log('Erro ao iniciar autenticação:', error);
+        handleAuthError(error);
+      }
     } 
     else if (Platform.OS === 'ios') {
       // Configuração para iOS
@@ -87,13 +114,18 @@ const FingerprintScannerComponent: React.FC<FingerprintProps> = ({ onScan }) => 
         cancelLabel: 'Cancelar',
       };
       
-      // Inicia a autenticação para iOS
-      FingerprintScanner.authenticate(iosConfig)
-        .then(() => {
-          FingerprintScanner.release();
-          onScan(); // Execute a callback após sucesso
-        })
-        .catch(handleAuthError);
+      try {
+        // Inicia a autenticação para iOS
+        FingerprintScanner.authenticate(iosConfig)
+          .then(() => {
+            safeRelease();
+            onScan(); // Execute a callback após sucesso
+          })
+          .catch(handleAuthError);
+      } catch (error) {
+        console.log('Erro ao iniciar autenticação:', error);
+        handleAuthError(error);
+      }
     }
     else {
       // Caso seja outra plataforma não suportada
@@ -107,22 +139,24 @@ const FingerprintScannerComponent: React.FC<FingerprintProps> = ({ onScan }) => 
 
   // Função para tratar erros de autenticação
   const handleAuthError = (error: any) => {
-    FingerprintScanner.release();
+    safeRelease();
     console.log('Erro na autenticação:', error);
     
     let errorMessage = 'Falha na autenticação biométrica';
     
     // Mensagens de erro específicas por código
-    if (error.name === 'FingerprintScannerNotEnrolled') {
-      errorMessage = 'Nenhuma impressão digital cadastrada neste dispositivo';
-    } else if (error.name === 'FingerprintScannerNotAvailable') {
-      errorMessage = 'Sensor biométrico não disponível ou desativado';
-    } else if (error.name === 'FingerprintScannerAuthenticationFailed') {
-      errorMessage = 'Impressão digital não reconhecida';
-    } else if (error.name === 'FingerprintScannerUnknownError') {
-      errorMessage = 'Ocorreu um erro desconhecido';
-    } else if (error.name === 'FingerprintScannerNotSupported') {
-      errorMessage = 'Autenticação biométrica não suportada neste dispositivo';
+    if (error && error.name) {
+      if (error.name === 'FingerprintScannerNotEnrolled') {
+        errorMessage = 'Nenhuma impressão digital cadastrada neste dispositivo';
+      } else if (error.name === 'FingerprintScannerNotAvailable') {
+        errorMessage = 'Sensor biométrico não disponível ou desativado';
+      } else if (error.name === 'FingerprintScannerAuthenticationFailed') {
+        errorMessage = 'Impressão digital não reconhecida';
+      } else if (error.name === 'FingerprintScannerUnknownError') {
+        errorMessage = 'Ocorreu um erro desconhecido';
+      } else if (error.name === 'FingerprintScannerNotSupported') {
+        errorMessage = 'Autenticação biométrica não suportada neste dispositivo';
+      }
     }
 
     Alert.alert('Erro de autenticação', errorMessage, [{ text: 'OK' }]);

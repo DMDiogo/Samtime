@@ -1,8 +1,28 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Dimensions, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { getTheme } from '../theme/theme';
+
+// Obter dimensões da tela
+const { width, height } = Dimensions.get('window');
+const isSmallDevice = width < 375;
+const isMediumDevice = width >= 375 && width < 768;
+const isLargeDevice = width >= 768;
+
+// Função para calcular tamanhos responsivos
+const scaleFontSize = (size: number) => {
+  if (isSmallDevice) return size * 0.85;
+  if (isMediumDevice) return size;
+  return size * 1.15; // para dispositivos grandes
+};
+
+// Calcular margens e paddings responsivos
+const scaleSize = (size: number) => {
+  const scale = width / 375; // 375 é uma largura base para iPhone 8
+  const newSize = size * scale;
+  return Math.round(newSize);
+};
 
 const ReportsScreen = () => {
   const [selectedDate, setSelectedDate] = useState("April 3, 2025");
@@ -42,24 +62,26 @@ const ReportsScreen = () => {
       <View style={[styles.header, { borderBottomColor: currentTheme.colors.divider }]}>
         <Text style={[styles.headerTitle, { color: currentTheme.colors.primary }]}>Relatórios</Text>
         <TouchableOpacity style={[styles.exportButton, { borderColor: currentTheme.colors.primary }]}>
-          <Ionicons name="download-outline" size={20} color={currentTheme.colors.primary} />
-          <Text style={[styles.exportButtonText, { color: currentTheme.colors.primary }]}>Exportar CSV</Text>
+          <Ionicons name="download-outline" size={scaleSize(20)} color={currentTheme.colors.primary} />
+          <Text style={[styles.exportButtonText, { color: currentTheme.colors.primary }]}>
+            {width < 360 ? "Exportar" : "Exportar CSV"}
+          </Text>
         </TouchableOpacity>
       </View>
       
       {/* Seletor de Data */}
       <View style={styles.dateSelector}>
         <TouchableOpacity onPress={goToPreviousDay} style={styles.dateNavButton}>
-          <Ionicons name="chevron-back" size={24} color={currentTheme.colors.textSecondary} />
+          <Ionicons name="chevron-back" size={scaleSize(24)} color={currentTheme.colors.textSecondary} />
         </TouchableOpacity>
         
         <TouchableOpacity style={[styles.dateDisplay, { borderColor: currentTheme.colors.inputBorder }]}>
-          <Ionicons name="calendar-outline" size={18} color={currentTheme.colors.text} style={styles.calendarIcon} />
+          <Ionicons name="calendar-outline" size={scaleSize(18)} color={currentTheme.colors.text} style={styles.calendarIcon} />
           <Text style={[styles.dateText, { color: currentTheme.colors.text }]}>{selectedDate}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity onPress={goToNextDay} style={styles.dateNavButton}>
-          <Ionicons name="chevron-forward" size={24} color={currentTheme.colors.textSecondary} />
+          <Ionicons name="chevron-forward" size={scaleSize(24)} color={currentTheme.colors.textSecondary} />
         </TouchableOpacity>
       </View>
       
@@ -94,98 +116,91 @@ const ReportsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 40,
+    paddingTop: Platform.OS === 'ios' ? scaleSize(40) : scaleSize(20),
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: scaleSize(20),
     paddingTop: 0,
-    paddingBottom: 10,
+    paddingBottom: scaleSize(10),
     borderBottomWidth: 1,
-    borderBottomColor: '#fff',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: scaleFontSize(24),
     fontWeight: 'bold',
-    color: '#3EB489',
-    marginTop: 20,
+    marginTop: scaleSize(20),
   },
   exportButton: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    marginTop:20,
-    borderColor: '#3EB489',
+    marginTop: scaleSize(20),
     borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: scaleSize(8),
+    paddingHorizontal: scaleSize(12),
   },
   exportButtonText: {
-    color: '#3EB489',
     marginLeft: 5,
-    fontSize: 14,
+    fontSize: scaleFontSize(14),
   },
   dateSelector: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingVertical: scaleSize(15),
   },
   dateNavButton: {
-    padding: 5,
+    padding: scaleSize(5),
   },
   dateDisplay: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 5,
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    marginHorizontal: 10,
+    paddingVertical: scaleSize(8),
+    paddingHorizontal: scaleSize(15),
+    marginHorizontal: scaleSize(10),
   },
   calendarIcon: {
     marginRight: 5,
   },
   dateText: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: scaleFontSize(16),
   },
   scrollView: {
     flex: 1,
-    padding: 15,
+    padding: scaleSize(15),
   },
   employeeCard: {
     borderWidth: 1,
-    borderColor: '#eee',
     borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
-    backgroundColor: '#fff',
+    padding: scaleSize(15),
+    marginBottom: scaleSize(15),
   },
   employeeName: { 
-    fontSize: 18,
+    fontSize: scaleFontSize(18),
     fontWeight: '500',
-    color: '#3EB489',
-    marginBottom: 15,
+    marginBottom: scaleSize(15),
   },
   recordItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: scaleSize(10),
+    flexWrap: 'wrap',
   },
   recordInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   statusDot: {
-    width: 10,
-    height: 10,
+    width: scaleSize(10),
+    height: scaleSize(10),
     borderRadius: 5,
-    marginRight: 10,
+    marginRight: scaleSize(10),
   },
   warningDot: {
     backgroundColor: 'orange',
@@ -194,12 +209,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'red',
   },
   recordType: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: scaleFontSize(16),
+    flex: 1,
+    flexWrap: 'wrap',
   },
   recordTime: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: scaleFontSize(14),
+    minWidth: scaleSize(80),
+    textAlign: 'right',
   }
 });
 

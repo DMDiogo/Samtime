@@ -1,8 +1,28 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { getTheme } from '../theme/theme';
+
+// Obter dimensões da tela
+const { width, height } = Dimensions.get('window');
+const isSmallDevice = width < 375;
+const isMediumDevice = width >= 375 && width < 768;
+const isLargeDevice = width >= 768;
+
+// Função para calcular tamanhos responsivos
+const scaleFontSize = (size: number) => {
+  if (isSmallDevice) return size * 0.85;
+  if (isMediumDevice) return size;
+  return size * 1.15; // para dispositivos grandes
+};
+
+// Calcular margens e paddings responsivos
+const scaleSize = (size: number) => {
+  const scale = width / 375; // 375 é uma largura base para iPhone 8
+  const newSize = size * scale;
+  return Math.round(newSize);
+};
 
 // Define the Employee interface
 interface Employee {
@@ -40,13 +60,13 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee }) => {
       </View>
       <View style={styles.actions}>
         <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="finger-print-outline" size={22} color={currentTheme.colors.primary} />
+          <Ionicons name="finger-print-outline" size={scaleSize(22)} color={currentTheme.colors.primary} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="create-outline" size={22} color={currentTheme.colors.primary} />
+          <Ionicons name="create-outline" size={scaleSize(22)} color={currentTheme.colors.primary} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="trash-outline" size={22} color={currentTheme.colors.error} />
+          <Ionicons name="trash-outline" size={scaleSize(22)} color={currentTheme.colors.error} />
         </TouchableOpacity>
       </View>
     </View>
@@ -56,8 +76,8 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee }) => {
 const styles = StyleSheet.create({
   card: {
     borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
+    padding: scaleSize(16),
+    marginBottom: scaleSize(16),
     flexDirection: 'row',
     justifyContent: 'space-between',
     shadowOffset: { width: 0, height: 2 },
@@ -67,39 +87,42 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     flex: 1,
+    paddingRight: scaleSize(8),
   },
   name: {
-    fontSize: 18,
+    fontSize: scaleFontSize(18),
     fontWeight: 'bold',
     marginBottom: 4,
   },
   position: {
-    fontSize: 14,
+    fontSize: scaleFontSize(14),
     marginBottom: 4,
   },
   id: {
-    fontSize: 14,
+    fontSize: scaleFontSize(14),
     marginBottom: 8,
   },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   statusDot: {
-    width: 10,
-    height: 10,
+    width: scaleSize(10),
+    height: scaleSize(10),
     borderRadius: 5,
     marginRight: 6,
   },
   statusText: {
-    fontSize: 14,
+    fontSize: scaleFontSize(14),
   },
   actions: {
-    flexDirection: 'row',
+    flexDirection: isSmallDevice ? 'column' : 'row',
     alignItems: 'center',
   },
   actionButton: {
-    marginLeft: 12,
+    marginLeft: isSmallDevice ? 0 : scaleSize(12),
+    marginBottom: isSmallDevice ? scaleSize(8) : 0,
   },
 });
 

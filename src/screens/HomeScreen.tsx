@@ -1,10 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Dimensions, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FingerprintScanner from '../components/FingerprintScanner';
 import { useTheme } from '../context/ThemeContext';
 import { getTheme } from '../theme/theme';
 import { ThemedView, ThemedText } from '../components/ThemedView';
+
+// Obter dimensões da tela
+const { width, height } = Dimensions.get('window');
+const isSmallDevice = width < 375;
+const isMediumDevice = width >= 375 && width < 768;
+const isLargeDevice = width >= 768;
+
+// Função para calcular tamanhos responsivos
+const scaleFontSize = (size: number) => {
+  if (isSmallDevice) return size * 0.85;
+  if (isMediumDevice) return size;
+  return size * 1.15; // para dispositivos grandes
+};
+
+// Calcular margens e paddings responsivos
+const scaleSize = (size: number) => {
+  const scale = width / 375; // 375 é uma largura base para iPhone 8
+  const newSize = size * scale;
+  return Math.round(newSize);
+};
 
 const HomeScreen = () => {
   const { theme } = useTheme();
@@ -93,7 +113,7 @@ const HomeScreen = () => {
         >
           <Ionicons 
             name="log-in-outline" 
-            size={24} 
+            size={scaleSize(24)} 
             color={selectedAction === 'Entrada' ? '#fff' : currentTheme.colors.primary} 
           />
           <Text 
@@ -120,7 +140,7 @@ const HomeScreen = () => {
         >
           <Ionicons 
             name="cafe-outline" 
-            size={24} 
+            size={scaleSize(24)} 
             color={selectedAction === 'Pausa' ? '#fff' : currentTheme.colors.text} 
           />
           <Text 
@@ -145,7 +165,7 @@ const HomeScreen = () => {
         >
           <Ionicons 
             name="log-out-outline" 
-            size={24} 
+            size={scaleSize(24)} 
             color={selectedAction === 'Saída' ? '#fff' : currentTheme.colors.primary} 
           />
           <Text 
@@ -175,37 +195,39 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: scaleSize(20),
     alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 24,
+    fontSize: scaleFontSize(24),
     fontWeight: 'bold',
-    marginTop: 40,
-    marginBottom: 20,
+    marginTop: Platform.OS === 'ios' ? scaleSize(40) : scaleSize(20),
+    marginBottom: scaleSize(20),
   },
   timeText: {
-    fontSize: 36,
+    fontSize: scaleFontSize(36),
     fontWeight: 'bold',
-    marginBottom: 30,
-    marginTop: 50,
+    marginBottom: scaleSize(20),
+    marginTop: scaleSize(40),
   },
   dateText: {
-    fontSize: 16,
-    marginBottom: 40,
+    fontSize: scaleFontSize(16),
+    marginBottom: scaleSize(30),
   },
   actionButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    marginBottom: 50,
+    marginBottom: scaleSize(40),
+    paddingHorizontal: scaleSize(5),
   },
   actionButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: scaleSize(12),
+    paddingHorizontal: scaleSize(8),
     borderRadius: 8,
     alignItems: 'center',
-    width: '30%',
+    width: width / 3.5,
   },
   middleButton: {
     borderWidth: 1,
@@ -215,15 +237,18 @@ const styles = StyleSheet.create({
   },
   actionText: {
     marginTop: 5,
-    fontSize: 14,
+    fontSize: scaleFontSize(13),
+    textAlign: 'center',
   },
   fingerprintContainer: {
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: scaleSize(20),
   },
   fingerprintText: {
-    fontSize: 14,
-    marginTop: 10,
+    fontSize: scaleFontSize(14),
+    marginTop: scaleSize(10),
+    textAlign: 'center',
+    paddingHorizontal: scaleSize(20),
   },
 });
 
