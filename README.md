@@ -174,4 +174,8 @@ O aplicativo se conecta ao MySQL via API PHP. Certifique-se de que o XAMPP está
 - As IDs dos funcionários são geradas automaticamente no formato EMP001, EMP002, etc.
 - A assinatura digital é opcional durante o cadastro e pode ser adicionada posteriormente
 - O app utiliza uma API PHP para comunicação com o banco de dados
+<<<<<<< HEAD
 - Interface adaptativa para diferentes tamanhos de tela (responsiva) 
+=======
+- Interface adaptativa para diferentes tamanhos de tela (responsiva)
+>>>>>>> 7e198123c84cf7dc3c712fb2547caa75fdbe7a36
