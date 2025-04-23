@@ -13,7 +13,7 @@ import {
   Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { EmployeesStackParamList } from '../navigation/EmployeesNavigator';
 import { useTheme } from '../context/ThemeContext';
@@ -41,11 +41,19 @@ const scaleSize = (size: number) => {
 };
 
 type AddEmployeeScreenNavigationProp = StackNavigationProp<EmployeesStackParamList, 'AddEmployee'>;
+type AddEmployeeScreenRouteProp = RouteProp<EmployeesStackParamList, 'AddEmployee'>;
 
-const AddEmployeeScreen: React.FC = () => {
+interface AddEmployeeScreenProps {
+  route: AddEmployeeScreenRouteProp;
+}
+
+const AddEmployeeScreen: React.FC<AddEmployeeScreenProps> = ({ route }) => {
   const navigation = useNavigation<AddEmployeeScreenNavigationProp>();
   const { theme } = useTheme();
   const currentTheme = getTheme(theme);
+  
+  // Obter ID da empresa dos parâmetros da rota
+  const { empresa_id } = route.params;
   
   const [name, setName] = useState('');
   const [position, setPosition] = useState('');
@@ -72,12 +80,15 @@ const AddEmployeeScreen: React.FC = () => {
   const generateEmployeeId = async () => {
     try {
       // Fetch the next employee ID from the server
-      const response = await fetch('http://192.168.1.57/api_employees.php', {
+      const response = await fetch('http://192.168.1.57/interface/api.biometrico/api_employees.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'getNextId' }),
+        body: JSON.stringify({ 
+          action: 'getNextId',
+          empresa_id: empresa_id 
+        }),
       });
 
       // Check if response is OK
@@ -123,7 +134,7 @@ const AddEmployeeScreen: React.FC = () => {
     try {
       const employeeId = await generateEmployeeId();
       
-      const response = await fetch('http://192.168.1.57/api_employees.php', {
+      const response = await fetch('http://192.168.1.57/interface/api.biometrico/api_employees.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,7 +145,8 @@ const AddEmployeeScreen: React.FC = () => {
           name,
           position,
           department,
-          digitalSignature: hasDigitalSignature
+          digitalSignature: hasDigitalSignature,
+          empresa_id: empresa_id
         }),
       });
 

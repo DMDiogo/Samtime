@@ -7,7 +7,6 @@ import { useTheme } from '../context/ThemeContext';
 import { getTheme } from '../theme/theme';
 import { ThemedView, ThemedText, ThemedCard } from '../components/ThemedView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CommonActions } from '@react-navigation/native';
 
 // Definição dos tipos para as rotas
 type RootStackParamList = {
@@ -126,27 +125,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     setIsEditing(false);
   };
 
-  const handleLogout = async () => {
-    try {
-      // Remover o token de autenticação
-      await AsyncStorage.removeItem('userToken');
-      
-      // Redefinir a navegação para a tela de login, removendo todas as telas da pilha
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'Login' }],
-        })
-      );
-      
-      // Mostra mensagem de sucesso (opcional, já que estamos redirecionando)
-      Alert.alert('Sucesso', 'Você saiu da sua conta com sucesso!');
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-      Alert.alert('Erro', 'Não foi possível encerrar a sessão. Tente novamente.');
-    }
-  };
-
   return (
     <ThemedView style={styles.container}>
       <View style={[styles.header, { backgroundColor: currentTheme.colors.background, borderBottomColor: currentTheme.colors.divider }]}>
@@ -241,14 +219,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 <ThemedText style={styles.cancelButtonText} type="secondary">Cancelar</ThemedText>
               </TouchableOpacity>
             )}
-
-            <TouchableOpacity 
-              style={styles.dangerButton}
-              onPress={handleLogout}
-            >
-              <Ionicons name="log-out-outline" size={20} color="#fff" />
-              <Text style={styles.dangerButtonText}>Sair da Conta</Text>
-            </TouchableOpacity>
           </>
         )}
       </ScrollView>
@@ -340,19 +310,6 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontWeight: '600',
-  },
-  dangerButton: {
-    backgroundColor: '#FF6B6B',
-    padding: 15,
-    borderRadius: 5,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dangerButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    marginLeft: 10,
   },
   loadingContainer: {
     flex: 1,

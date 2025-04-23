@@ -6,7 +6,9 @@ import AddEmployeeScreen from '../screens/AddEmployeeScreen';
 // Define os parâmetros para as rotas de funcionários
 export type EmployeesStackParamList = {
   Employees: undefined;
-  AddEmployee: undefined;
+  AddEmployee: {
+    empresa_id: number;
+  };
 };
 
 const Stack = createStackNavigator<EmployeesStackParamList>();

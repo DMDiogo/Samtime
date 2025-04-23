@@ -8,6 +8,7 @@ import { getTheme } from '../theme/theme';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { EmployeesStackParamList } from '../navigation/EmployeesNavigator';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Obter dimensões da tela
 const { width, height } = Dimensions.get('window');
@@ -53,12 +54,30 @@ const EmployeesScreen: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch('http://192.168.1.57/api_employees.php', {
+      // Obter empresa atual do AsyncStorage
+      const userTokenString = await AsyncStorage.getItem('userToken');
+      if (!userTokenString) {
+        throw new Error('Usuário não autenticado');
+      }
+      
+      const userData = JSON.parse(userTokenString);
+      const empresaId = userData.id;
+      
+      if (!empresaId) {
+        throw new Error('ID da empresa não encontrado');
+      }
+      
+      console.log('Buscando funcionários para a empresa ID:', empresaId);
+      
+      const response = await fetch('http://192.168.1.57/interface/api.biometrico/api_employees.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'getEmployees' }),
+        body: JSON.stringify({ 
+          action: 'getEmployees',
+          empresa_id: empresaId
+        }),
       });
       
       // Check if response is OK
@@ -81,27 +100,17 @@ const EmployeesScreen: React.FC = () => {
       }
       
       if (data.status === 'success') {
+        // Garantir que employees seja um array, mesmo se for vazio
         setEmployees(data.employees || []);
       } else {
         setError('Erro ao carregar funcionários: ' + (data.message || 'Erro desconhecido'));
-        // Fallback to mock data if API fails
-        setEmployees(mockEmployees.map(employee => ({
-          ...employee,
-          department: employee.position.includes('Developer') ? 'Engineering' : 
-                      employee.position.includes('Manager') ? 'Management' : 
-                      employee.position.includes('Designer') ? 'Design' : 'Other'
-        })));
+        // Em desenvolvimento, não vamos mais usar dados mockados
+        // isso deve garantir que cada empresa veja apenas seus funcionários
       }
     } catch (error) {
       console.error('Error fetching employees:', error);
       setError('Não foi possível conectar ao servidor');
-      // Fallback to mock data
-      setEmployees(mockEmployees.map(employee => ({
-        ...employee,
-        department: employee.position.includes('Developer') ? 'Engineering' : 
-                    employee.position.includes('Manager') ? 'Management' : 
-                    employee.position.includes('Designer') ? 'Design' : 'Other'
-      })));
+      // Não usar mock data mesmo em desenvolvimento
     } finally {
       setIsLoading(false);
     }
@@ -114,8 +123,24 @@ const EmployeesScreen: React.FC = () => {
     }, [])
   );
 
-  const handleAddEmployee = () => {
-    navigation.navigate('AddEmployee');
+  const handleAddEmployee = async () => {
+    try {
+      // Obter empresa atual do AsyncStorage para o ID da empresa
+      const userTokenString = await AsyncStorage.getItem('userToken');
+      if (!userTokenString) {
+        Alert.alert('Erro', 'Usuário não autenticado');
+        return;
+      }
+      
+      const userData = JSON.parse(userTokenString);
+      const empresaId = userData.id;
+      
+      // Navegar para a tela AddEmployee passando o ID da empresa
+      navigation.navigate('AddEmployee', { empresa_id: empresaId });
+    } catch (error) {
+      console.error('Error getting empresa ID:', error);
+      Alert.alert('Erro', 'Não foi possível obter informações da empresa');
+    }
   };
 
   return (
@@ -155,7 +180,7 @@ const EmployeesScreen: React.FC = () => {
       ) : (
         <FlatList
           data={employees}
-          renderItem={({ item }) => <EmployeeCard employee={item} />}
+          renderItem={({ item }) => <EmployeeCard employee={item} onUpdateSuccess={fetchEmployees} />}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={

@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, Keyboard, Alert } from 'react-native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
-import FingerprintScannerComponent from '../components/FingerprintScanner';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import axios from 'axios';
@@ -29,28 +28,7 @@ const LoginScreen = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const { theme } = useTheme();
   const currentTheme = getTheme(theme);
-  const [useBiometric, setUseBiometric] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [savedCredentials, setSavedCredentials] = useState<{email: string, password: string} | null>(null);
-  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
-
-  // Verificar se existem credenciais salvas para autenticação biométrica
-  useEffect(() => {
-    checkSavedCredentials();
-  }, []);
-
-  const checkSavedCredentials = async () => {
-    try {
-      const credentials = await AsyncStorage.getItem('savedCredentials');
-      if (credentials) {
-        setSavedCredentials(JSON.parse(credentials));
-        setIsBiometricAvailable(true);
-      }
-    } catch (error) {
-      console.error('Erro ao verificar credenciais salvas:', error);
-      setIsBiometricAvailable(false);
-    }
-  };
 
   const handleLogin = async (values: { email: string; password: string }) => {
     Keyboard.dismiss(); // Fecha o teclado antes da navegação
@@ -64,33 +42,6 @@ const LoginScreen = () => {
   
       if (response.data.status === 'success') {
         await AsyncStorage.setItem('userToken', JSON.stringify(response.data.empresa));
-        
-        // Perguntar se deseja salvar as credenciais para login biométrico
-        Alert.alert(
-          'Autenticação Biométrica',
-          'Deseja salvar suas credenciais para login biométrico?',
-          [
-            {
-              text: 'Não',
-              style: 'cancel'
-            },
-            {
-              text: 'Sim',
-              onPress: async () => {
-                try {
-                  await AsyncStorage.setItem('savedCredentials', JSON.stringify({
-                    email: values.email,
-                    password: values.password
-                  }));
-                  setIsBiometricAvailable(true);
-                } catch (error) {
-                  console.error('Erro ao salvar credenciais:', error);
-                }
-              }
-            }
-          ]
-        );
-        
         navigation.navigate('Main');
       } else {
         Alert.alert('Erro', response.data.message || 'Falha na autenticação');
@@ -100,37 +51,6 @@ const LoginScreen = () => {
       Alert.alert('Erro', 'Erro ao conectar ao servidor. Verifique sua conexão.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleBiometricSuccess = async () => {
-    // Só tenta fazer login biométrico se houver credenciais salvas
-    if (savedCredentials && savedCredentials.email && savedCredentials.password) {
-      setLoading(true);
-      try {
-        const response = await axios.post('http://192.168.1.57/app_empresas_api/api.php', {
-          action: 'login',
-          email: savedCredentials.email,
-          password: savedCredentials.password
-        });
-        
-        if (response.data.status === 'success') {
-          await AsyncStorage.setItem('userToken', JSON.stringify(response.data.empresa));
-          navigation.navigate('Main');
-        } else {
-          Alert.alert('Erro', response.data.message || 'Falha na autenticação biométrica');
-        }
-      } catch (error) {
-        console.error('Erro no login biométrico:', error);
-        Alert.alert('Erro', 'Erro ao conectar ao servidor. Tente fazer login manualmente.');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      Alert.alert(
-        'Autenticação Biométrica',
-        'Nenhuma credencial salva. Por favor, faça login manualmente primeiro.'
-      );
     }
   };
 
@@ -231,21 +151,6 @@ const LoginScreen = () => {
               </View>
             )}
           </Formik>
-
-          <View style={styles.dividerContainer}>
-            <View style={[styles.divider, { backgroundColor: currentTheme.colors.border }]} />
-            <ThemedText style={styles.orText} type="secondary">OU</ThemedText>
-            <View style={[styles.divider, { backgroundColor: currentTheme.colors.border }]} />
-          </View>
-
-          {isBiometricAvailable && (
-            <View style={styles.biometricContainer}>
-              <FingerprintScannerComponent onScan={handleBiometricSuccess} />
-              <ThemedText style={styles.biometricText} type="secondary">
-                Autenticação biométrica disponível
-              </ThemedText>
-            </View>
-          )}
 
           <TouchableOpacity 
             style={styles.registerContainer}
@@ -353,30 +258,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-  },
-  orText: {
-    paddingHorizontal: 16,
-    fontSize: 14,
-  },
-  biometricContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  biometricText: {
-    marginTop: 8,
-    fontSize: 14,
-  },
   registerContainer: {
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 32,
   },
   registerText: {
     fontSize: 14,

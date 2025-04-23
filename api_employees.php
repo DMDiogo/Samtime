@@ -22,7 +22,8 @@ $sql = "CREATE TABLE IF NOT EXISTS employees (
     name VARCHAR(100) NOT NULL,
     position VARCHAR(100) NOT NULL,
     department VARCHAR(100) NOT NULL,
-    digital_signature BOOLEAN DEFAULT 0
+    digital_signature BOOLEAN DEFAULT 0,
+    empresa_id INT NOT NULL
 )";
 
 if (!$conn->query($sql)) {
@@ -42,7 +43,15 @@ switch ($method) {
             switch ($data['action']) {
                 case 'getNextId':
                     // Get the highest ID and increment
-                    $sql = "SELECT id FROM employees ORDER BY id DESC LIMIT 1";
+                    // Adiciona verificação de empresa_id
+                    $empresaId = isset($data['empresa_id']) ? intval($data['empresa_id']) : 0;
+                    
+                    if ($empresaId <= 0) {
+                        $response = array('status' => 'error', 'message' => 'ID da empresa inválido');
+                        break;
+                    }
+                    
+                    $sql = "SELECT id FROM employees WHERE empresa_id = $empresaId ORDER BY id DESC LIMIT 1";
                     $result = $conn->query($sql);
                     
                     if ($result->num_rows > 0) {
@@ -66,9 +75,15 @@ switch ($method) {
                     $position = $conn->real_escape_string($data['position']);
                     $department = $conn->real_escape_string($data['department']);
                     $digitalSignature = isset($data['digitalSignature']) ? ($data['digitalSignature'] ? 1 : 0) : 0;
+                    $empresaId = isset($data['empresa_id']) ? intval($data['empresa_id']) : 0;
                     
-                    $sql = "INSERT INTO employees (id, name, position, department, digital_signature) 
-                            VALUES ('$id', '$name', '$position', '$department', $digitalSignature)";
+                    if ($empresaId <= 0) {
+                        $response = array('status' => 'error', 'message' => 'ID da empresa inválido');
+                        break;
+                    }
+                    
+                    $sql = "INSERT INTO employees (id, name, position, department, digital_signature, empresa_id) 
+                            VALUES ('$id', '$name', '$position', '$department', $digitalSignature, $empresaId)";
                     
                     if ($conn->query($sql) === TRUE) {
                         $response = array('status' => 'success', 'message' => 'Funcionário cadastrado com sucesso');
@@ -78,7 +93,14 @@ switch ($method) {
                     break;
                     
                 case 'getEmployees':
-                    $sql = "SELECT * FROM employees ORDER BY id";
+                    $empresaId = isset($data['empresa_id']) ? intval($data['empresa_id']) : 0;
+                    
+                    if ($empresaId <= 0) {
+                        $response = array('status' => 'error', 'message' => 'ID da empresa inválido');
+                        break;
+                    }
+                    
+                    $sql = "SELECT * FROM employees WHERE empresa_id = $empresaId ORDER BY id";
                     $result = $conn->query($sql);
                     
                     if ($result->num_rows > 0) {
@@ -103,8 +125,14 @@ switch ($method) {
                 case 'updateDigitalSignature':
                     $id = $conn->real_escape_string($data['id']);
                     $digitalSignature = $data['digitalSignature'] ? 1 : 0;
+                    $empresaId = isset($data['empresa_id']) ? intval($data['empresa_id']) : 0;
                     
-                    $sql = "UPDATE employees SET digital_signature = $digitalSignature WHERE id = '$id'";
+                    if ($empresaId <= 0) {
+                        $response = array('status' => 'error', 'message' => 'ID da empresa inválido');
+                        break;
+                    }
+                    
+                    $sql = "UPDATE employees SET digital_signature = $digitalSignature WHERE id = '$id' AND empresa_id = $empresaId";
                     
                     if ($conn->query($sql) === TRUE) {
                         $response = array('status' => 'success', 'message' => 'Assinatura digital atualizada com sucesso');
@@ -115,8 +143,14 @@ switch ($method) {
                     
                 case 'deleteEmployee':
                     $id = $conn->real_escape_string($data['id']);
+                    $empresaId = isset($data['empresa_id']) ? intval($data['empresa_id']) : 0;
                     
-                    $sql = "DELETE FROM employees WHERE id = '$id'";
+                    if ($empresaId <= 0) {
+                        $response = array('status' => 'error', 'message' => 'ID da empresa inválido');
+                        break;
+                    }
+                    
+                    $sql = "DELETE FROM employees WHERE id = '$id' AND empresa_id = $empresaId";
                     
                     if ($conn->query($sql) === TRUE) {
                         $response = array('status' => 'success', 'message' => 'Funcionário removido com sucesso');
