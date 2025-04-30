@@ -29,26 +29,53 @@ const LoginScreen = () => {
   const { theme } = useTheme();
   const currentTheme = getTheme(theme);
   const [loading, setLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   const handleLogin = async (values: { email: string; password: string }) => {
     Keyboard.dismiss(); // Fecha o teclado antes da navegação
     setLoading(true);
+    setDebugInfo(null);
+
+    console.log('Iniciando login para:', values.email);
+    
     try {
-      const response = await axios.post('http://192.168.1.57/app_empresas_api/api.php', {
+      // Alteração do endereço IP para localhost ou o IP do servidor
+      const API_URL = 'http://192.168.1.57/app_empresas_api/api.php';
+      console.log('Enviando requisição para:', API_URL);
+      
+      const response = await axios.post(API_URL, {
         action: 'login',
         email: values.email,
         password: values.password
       });
   
+      console.log('Resposta recebida:', JSON.stringify(response.data));
+      
       if (response.data.status === 'success') {
+        console.log('Login bem-sucedido');
         await AsyncStorage.setItem('userToken', JSON.stringify(response.data.empresa));
         navigation.navigate('Main');
       } else {
+        console.log('Falha no login:', response.data.message);
+        setDebugInfo(`Erro: ${response.data.message}`);
         Alert.alert('Erro', response.data.message || 'Falha na autenticação');
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert('Erro', 'Erro ao conectar ao servidor. Verifique sua conexão.');
+      console.error('Erro na requisição:', error);
+      let errorMessage = 'Erro ao conectar ao servidor. Verifique sua conexão.';
+      
+      if (axios.isAxiosError(error) && error.response) {
+        errorMessage = `Erro ${error.response.status}: ${error.response.statusText}`;
+        setDebugInfo(`Erro detalhado: ${JSON.stringify(error.response.data)}`);
+      } else if (axios.isAxiosError(error) && error.request) {
+        errorMessage = 'Servidor não respondeu. Verifique sua conexão.';
+        setDebugInfo(`Sem resposta do servidor: ${JSON.stringify(error.request)}`);
+      } else if (error instanceof Error) {
+        errorMessage = `Erro: ${error.message}`;
+        setDebugInfo(`Exceção: ${error.message}`);
+      }
+      
+      Alert.alert('Erro', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -148,6 +175,12 @@ const LoginScreen = () => {
                     {loading ? 'Carregando...' : 'Entrar'}
                   </Text>
                 </TouchableOpacity>
+                
+                {debugInfo && (
+                  <View style={styles.debugContainer}>
+                    <Text style={styles.debugText}>{debugInfo}</Text>
+                  </View>
+                )}
               </View>
             )}
           </Formik>
@@ -264,6 +297,16 @@ const styles = StyleSheet.create({
   },
   registerText: {
     fontSize: 14,
+  },
+  debugContainer: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 8,
+  },
+  debugText: {
+    fontSize: 12,
+    color: '#666',
   },
 });
 
