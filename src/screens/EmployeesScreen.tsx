@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, FlatList, Text, TouchableOpacity, Dimensions, Platform, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import EmployeeCard from '../components/EmployeeCard';
-import { mockEmployees } from '../utils/mockData';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { getTheme } from '../theme/theme';
@@ -104,13 +103,10 @@ const EmployeesScreen: React.FC = () => {
         setEmployees(data.employees || []);
       } else {
         setError('Erro ao carregar funcionários: ' + (data.message || 'Erro desconhecido'));
-        // Em desenvolvimento, não vamos mais usar dados mockados
-        // isso deve garantir que cada empresa veja apenas seus funcionários
       }
     } catch (error) {
       console.error('Error fetching employees:', error);
       setError('Não foi possível conectar ao servidor');
-      // Não usar mock data mesmo em desenvolvimento
     } finally {
       setIsLoading(false);
     }
@@ -123,40 +119,11 @@ const EmployeesScreen: React.FC = () => {
     }, [])
   );
 
-  const handleAddEmployee = async () => {
-    try {
-      // Obter empresa atual do AsyncStorage para o ID da empresa
-      const userTokenString = await AsyncStorage.getItem('userToken');
-      if (!userTokenString) {
-        Alert.alert('Erro', 'Usuário não autenticado');
-        return;
-      }
-      
-      const userData = JSON.parse(userTokenString);
-      const empresaId = userData.id;
-      
-      // Navegar para a tela AddEmployee passando o ID da empresa
-      navigation.navigate('AddEmployee', { empresa_id: empresaId });
-    } catch (error) {
-      console.error('Error getting empresa ID:', error);
-      Alert.alert('Erro', 'Não foi possível obter informações da empresa');
-    }
-  };
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.colors.background }]}>
       {/* Cabeçalho */}
       <View style={[styles.header, { borderBottomColor: currentTheme.colors.divider }]}>
         <Text style={[styles.headerTitle, { color: currentTheme.colors.primary }]}>Funcionários</Text>
-        <TouchableOpacity 
-          style={[styles.addButton, { backgroundColor: currentTheme.colors.primary }]}
-          onPress={handleAddEmployee}
-        >
-          <Ionicons name="add" size={scaleSize(20)} color={currentTheme.colors.buttonText} />
-          <Text style={[styles.addButtonText, { color: currentTheme.colors.buttonText }]}>
-            {width < 360 ? "Adicionar" : "Adicionar Funcionário"}
-          </Text>
-        </TouchableOpacity>
       </View>
       
       {isLoading ? (
@@ -194,7 +161,7 @@ const EmployeesScreen: React.FC = () => {
                 Nenhum funcionário encontrado
               </Text>
               <Text style={[styles.emptySubText, { color: currentTheme.colors.textSecondary }]}>
-                Adicione seu primeiro funcionário clicando no botão acima
+                Os funcionários devem ser adicionados pelo site
               </Text>
             </View>
           }
@@ -222,18 +189,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: scaleFontSize(24),
     fontWeight: 'bold',
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 20,
-    paddingVertical: scaleSize(8),
-    paddingHorizontal: scaleSize(12),
-  },
-  addButtonText: {
-    marginLeft: 5,
-    fontSize: scaleFontSize(14),
-    fontWeight: '500',
   },
   listContent: {
     paddingHorizontal: scaleSize(15),

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 04-Maio-2025 às 12:36
+-- Tempo de geração: 10-Maio-2025 às 21:44
 -- Versão do servidor: 10.4.32-MariaDB
 -- versão do PHP: 8.0.30
 
@@ -33,7 +33,7 @@ CREATE TABLE `employees` (
   `position` varchar(100) NOT NULL,
   `department` varchar(100) NOT NULL,
   `digital_signature` tinyint(1) DEFAULT 0,
-  `empresa_id` int(11) NOT NULL DEFAULT 1
+  `empresa_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -47,20 +47,16 @@ CREATE TABLE `empresas` (
   `nome` varchar(100) NOT NULL,
   `email` varchar(100) NOT NULL,
   `senha` varchar(255) NOT NULL,
-  `data_cadastro` timestamp NOT NULL DEFAULT current_timestamp()
+  `data_cadastro` timestamp NOT NULL DEFAULT current_timestamp(),
+  `site_empresa_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Extraindo dados da tabela `empresas`
 --
 
-INSERT INTO `empresas` (`id`, `nome`, `email`, `senha`, `data_cadastro`) VALUES
-(15, 'Jorge', 'Jorge@gmail.com', '$2y$10$s7Ve0HZcXHP42y0g58ofhefH1KSC0oIc0ZCgtg9DET9mmtDrJFYQm', '2025-04-23 19:25:37'),
-(16, 'Diogo ', 'dm@gmail.com', '$2y$10$A9TdafBnFTnpgcfs/SnyCOxB5ILd0PMJk3iEuDyDJ3B2ocqRWdhay', '2025-04-23 19:26:03'),
-(17, 'Dd@gmail.com', 'dd@gmail.com', '$2y$10$VMSo2m2IUL0TfW4kY2lcPeH9Wi11B4oDZmvOXqiOk8uHxSjwmfiSa', '2025-04-26 18:37:35'),
-(20, 'Douglas sola', 'dg@gmail.com', '$2y$10$iRhDS1kL8V4Sxuxbatg5dOdnI7V5SJJOWBol4TMPwzVT9Kf5i3Ii6', '2025-04-30 18:58:21'),
-(21, 'FEr', 'fer@gmail.com', '$2y$10$gVkC1tSsNFcgkuHgWA8Y0esHFKcuNWbljVEAyWjzSWl/UdfKVSERy', '2025-05-03 10:59:35'),
-(22, 'FFG', 'F@gmail.com', '$2y$10$cH7y6KWv3W8IqTehgOjomurU7Usv542D1Pp5esC74sILKwWPRP/1O', '2025-05-04 10:05:07');
+INSERT INTO `empresas` (`id`, `nome`, `email`, `senha`, `data_cadastro`, `site_empresa_id`) VALUES
+(3, 'Diogo Oliveira', 'diogodm1225@gmail.com', '$2y$10$fPubpk27CMUX5Fgb1mLrg.Nx3SostAJfWqbbSJy2FjXmcapDQ2aZi', '2025-05-07 23:22:22', NULL);
 
 --
 -- Índices para tabelas despejadas
@@ -70,14 +66,16 @@ INSERT INTO `empresas` (`id`, `nome`, `email`, `senha`, `data_cadastro`) VALUES
 -- Índices para tabela `employees`
 --
 ALTER TABLE `employees`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_employees_empresa` (`empresa_id`);
 
 --
 -- Índices para tabela `empresas`
 --
 ALTER TABLE `empresas`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `email` (`email`);
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `idx_site_empresa_id` (`site_empresa_id`);
 
 --
 -- AUTO_INCREMENT de tabelas despejadas
@@ -87,7 +85,17 @@ ALTER TABLE `empresas`
 -- AUTO_INCREMENT de tabela `empresas`
 --
 ALTER TABLE `empresas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- Restrições para despejos de tabelas
+--
+
+--
+-- Limitadores para a tabela `employees`
+--
+ALTER TABLE `employees`
+  ADD CONSTRAINT `fk_employees_empresa` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
